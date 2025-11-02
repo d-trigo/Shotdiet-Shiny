@@ -5,6 +5,8 @@ library(duckdb)
 library(DBI)
 library(gt)
 library(gtExtras)
+library(gtUtils)
+library(paletteer)
 
 
 ui <- fluidPage(
@@ -85,6 +87,25 @@ server <- function(input, output, session) {
         dplyr::mutate(ShotType_Proportion = round(ShotType_Proportion, 2))|>
         dplyr::mutate(ShotType_Efficiency = round(ShotType_Efficiency, 2))|>
         gt()|>
+        gt_theme_athletic()|>
+        cols_label(
+          player_name = "Player",
+          ShotType_Attempts = "Shot Type FGA",
+          ShotType_Made = "Shot Type FGM",
+          Total_FGA = "Total FGA",
+          ShotType_Proportion = "Shot Type Atmpt%",
+          ShotType_Efficiency = "Shot Type FG%"
+        )|>
+        data_color(
+          columns = ShotType_Efficiency,
+          palette = paletteer_d("rcartocolor::Temps"),
+          # use 1-60 as range
+          domain = c(0.00, 0.90),
+          reverse = T,
+          # anything above 100 has the highest color
+          na_color = '#8FA3ABFF',
+          alpha = .75
+        )|>
         opt_interactive()
     })
 }
