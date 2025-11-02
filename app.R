@@ -64,9 +64,11 @@ server <- function(input, output, session) {
               
             END AS player_name,
             
-          SUM(CASE WHEN type_text ILIKE ?shottype THEN 1 ELSE 0 END) AS ShotType_Attempts,
+          SUM(CASE WHEN type_text ILIKE ?shottype THEN 1 ELSE 0 END)/COUNT(DISTINCT game_id) AS ShotType_Attempts,
           
-          sum(CASE WHEN type_text ILIKE ?shottype AND scoring_play = 'TRUE' THEN 1 ELSE 0 END) AS ShotType_Made,
+          sum(CASE WHEN type_text ILIKE ?shottype AND scoring_play = 'TRUE' THEN 1 ELSE 0 END)/COUNT(DISTINCT game_id) AS ShotType_Made,
+          
+          COUNT(DISTINCT game_id) AS Games_Played,
           
           SUM(CASE WHEN shooting_play = 'TRUE' THEN 1 ELSE 0 END) AS Total_FGA,
           
@@ -85,15 +87,18 @@ server <- function(input, output, session) {
       shottype_table <- dbGetQuery(con, query)
       shottype_table|>
         dplyr::filter(player_name!="NON-SHOOTING PLAY")|>
+        dplyr::mutate(ShotType_Attempts = round(ShotType_Attempts, 2))|>
+        dplyr::mutate(ShotType_Made = round(ShotType_Made, 2))|>
         dplyr::mutate(ShotType_Proportion = round(ShotType_Proportion, 2))|>
         dplyr::mutate(ShotType_Efficiency = round(ShotType_Efficiency, 2))|>
         gt()|>
         gt_theme_athletic()|>
         cols_label(
           player_name = "Player",
-          ShotType_Attempts = "Shot Type FGA",
-          ShotType_Made = "Shot Type FGM",
-          Total_FGA = "Total FGA",
+          ShotType_Attempts = "Shot Type FGA (per game)",
+          ShotType_Made = "Shot Type FGM (per game)",
+          Games_Played = "Games Played",
+          Total_FGA = "Total FGA (season)",
           ShotType_Proportion = "Shot Type Atmpt%",
           ShotType_Efficiency = "Shot Type FG%"
         )|>
