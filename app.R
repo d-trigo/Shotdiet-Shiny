@@ -13,7 +13,8 @@ ui <- fluidPage(
                   "2024-25" = 2025,
                   "2023-24" = 2024,
                   "2022-23" = 2023,
-                  "2021-22" = 2022))
+                  "2021-22" = 2022)),
+    width = 3
   ),
   sidebarPanel(
     selectInput("shottype", "Shot Type:",
@@ -21,8 +22,11 @@ ui <- fluidPage(
                   "Floaters" = '%float%',
                   "Hooks" = '%hook%',
                   "Layups" = '%layup%',
-                  "Pullups" = '%pull-up%',
-                  "Stepbacks" = '%step back%'))
+                  "Pullups" = '%pullup%',
+                  "Stepbacks" = '%step back%',
+                  "Dunks" = '%dunk%',
+                  "Cuts" = '%cutting%')),
+    width = 3
   ),
   
   
@@ -66,7 +70,8 @@ server <- function(input, output, session) {
           
           FROM pbp
           GROUP BY player_name
-          ORDER BY ShotType_Attempts DESC"
+          ORDER BY ShotType_Attempts DESC
+          LIMIT 100"
       
       query <- sqlInterpolate(conn = con, sql = query, shottype = input$shottype)
       shottype_table <- dbGetQuery(con, query)
