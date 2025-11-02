@@ -19,12 +19,14 @@ ui <- fluidPage(
   ),
   sidebarPanel(
     selectInput("shottype", "Shot Type:",
-                c("Drives" = '%driving%',
+                c("Standing Jump Shot" = 'Jump Shot',
+                  "Drives" = '%driving%',
                   "Floaters" = '%float%',
                   "Hooks" = '%hook%',
                   "Layups" = '%layup%',
                   "Pullups" = '%pullup%',
                   "Stepbacks" = '%step back%',
+                  "Fadeaways" = '%Fade Away%',
                   "Dunks" = '%dunk%',
                   "Cuts" = '%cutting%')),
     width = 3
