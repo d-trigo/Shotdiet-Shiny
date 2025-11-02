@@ -7,6 +7,7 @@ library(gt)
 library(gtExtras)
 library(gtUtils)
 library(paletteer)
+library(magick)
 
 
 ui <- fluidPage(
@@ -100,10 +101,20 @@ server <- function(input, output, session) {
           columns = ShotType_Efficiency,
           palette = paletteer_d("rcartocolor::Temps"),
           # use 1-60 as range
-          domain = c(0.00, 0.90),
+          domain = c(0.00, 0.65),
           reverse = T,
           # anything above 100 has the highest color
           na_color = '#8FA3ABFF',
+          alpha = .75
+        )|>
+        data_color(
+          columns = ShotType_Proportion,
+          palette = paletteer_d("beyonce::X47"),
+          # use 1-60 as range
+          domain = c(0.00, 0.65),
+          reverse = T,
+          # anything above 100 has the highest color
+          na_color = '#AD8875FF',
           alpha = .75
         )|>
         opt_interactive()
