@@ -1643,6 +1643,43 @@
         "Built": "R 4.5.1; ; 2025-09-08 02:32:03 UTC; windows"
       }
     },
+    "gtUtils": {
+      "Source": "github",
+      "Repository": null,
+      "description": {
+        "Package": "gtUtils",
+        "Title": "Enhancements and Utilities for the gt Package",
+        "Version": "0.1.0",
+        "Authors@R": "\n    person(\"Andrew\", \"Weatherman\", , \"andrew@aweatherman.com\", role = c(\"aut\", \"cre\"))",
+        "Description": "What the package does (one paragraph).",
+        "License": "MIT + file LICENSE",
+        "Encoding": "UTF-8",
+        "Roxygen": "list(markdown = TRUE)",
+        "RoxygenNote": "7.2.3",
+        "Imports": "dplyr, glue, gt, gtExtras, htmltools, rlang, scales",
+        "Suggests": "knitr, magick, purrr, rmarkdown, webshot2",
+        "VignetteBuilder": "knitr",
+        "Depends": "R (>= 2.10)",
+        "LazyData": "true",
+        "URL": "https://gtutils.aweatherman.com/,\nhttps://andreweatherman.github.io/gtUtils/",
+        "BugReports": "https://github.com/andreweatherman/gtUtils",
+        "RemoteType": "github",
+        "RemoteHost": "api.github.com",
+        "RemoteRepo": "gtUtils",
+        "RemoteUsername": "andreweatherman",
+        "RemoteRef": "HEAD",
+        "RemoteSha": "16aa2928a0f29651abb7870b801d69662f143725",
+        "GithubRepo": "gtUtils",
+        "GithubUsername": "andreweatherman",
+        "GithubRef": "HEAD",
+        "GithubSHA1": "16aa2928a0f29651abb7870b801d69662f143725",
+        "NeedsCompilation": "no",
+        "Packaged": "2025-09-30 02:06:09 UTC; W10",
+        "Author": "Andrew Weatherman [aut, cre]",
+        "Maintainer": "Andrew Weatherman <andrew@aweatherman.com>",
+        "Built": "R 4.5.1; ; 2025-09-30 02:06:11 UTC; windows"
+      }
+    },
     "gtable": {
       "Source": "CRAN",
       "Repository": "https://cran.rstudio.com",
@@ -4165,7 +4202,13 @@
   },
   "files": {
     "app.R": {
-      "checksum": "000337b495be63f3e626248c91eb751d"
+      "checksum": "12481e30248274f7b4ef1c0059ed61cf"
+    },
+    "LICENSE": {
+      "checksum": "bde8256e358616cbdecd803261eb5258"
+    },
+    "README.md": {
+      "checksum": "9e4b08343f0ccb0082fb1030bd3c5f8d"
     }
   },
   "users": null
