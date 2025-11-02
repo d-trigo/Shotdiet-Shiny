@@ -4,6 +4,7 @@ library(shiny)
 library(duckdb)
 library(DBI)
 library(gt)
+library(gtExtras)
 
 
 ui <- fluidPage(
@@ -59,6 +60,8 @@ server <- function(input, output, session) {
             END AS player_name,
             
           SUM(CASE WHEN type_text ILIKE ?shottype THEN 1 ELSE 0 END) AS ShotType_Attempts,
+          
+          sum(CASE WHEN type_text ILIKE ?shottype AND scoring_play = 'TRUE' THEN 1 ELSE 0 END) AS ShotType_Made,
           
           SUM(CASE WHEN shooting_play = 'TRUE' THEN 1 ELSE 0 END) AS Total_FGA,
           
