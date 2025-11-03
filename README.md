@@ -1,7 +1,7 @@
 # Shotdiets with Shiny
 
 <img width="2401" height="400" alt="image" src="https://github.com/user-attachments/assets/8c207f1d-4456-48bd-9cc2-aec53c5762ca" />
-** See this project at https://danieltrigo-shotdiet-shiny.share.connect.posit.cloud/ **
+**[Click here to view this application](https://danieltrigo-shotdiet-shiny.share.connect.posit.cloud/))**
 
 This project is inspired by the Shotcreator website which is now unfortunately defunct due to API restrictions. I wanted to replicate what Shotcreator had, including leaderboards based on shot type along with shot maps for individual players, while also placing emphasis on being able to easily visualize a player's "shot diet". To accomplish this, I utilized solutions such as SQL in order to review large play-by-play datasets and transform them into meaningful representations of player shooting performance. 
 
