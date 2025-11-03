@@ -85,7 +85,7 @@ server <- function(input, output, session) {
       
       query <- sqlInterpolate(conn = con, sql = query, shottype = input$shottype)
       shottype_table <- dbGetQuery(con, query)
-      shottype_table|>
+      shottype_table|> #note to self: figure out error with Jimmy being changed to Jimmy Butler III. remove roman numerals? 
         dplyr::filter(player_name!="NON-SHOOTING PLAY")|>
         dplyr::mutate(ShotType_Attempts = round(ShotType_Attempts, 2))|>
         dplyr::mutate(ShotType_Made = round(ShotType_Made, 2))|>
@@ -106,7 +106,7 @@ server <- function(input, output, session) {
           columns = ShotType_Efficiency,
           palette = paletteer_d("rcartocolor::Temps"),
           # use 1-60 as range
-          domain = c(0.00, 0.65),
+          domain = c(0.00, 1.00),
           reverse = T,
           # anything above 100 has the highest color
           na_color = '#8FA3ABFF',
@@ -116,7 +116,7 @@ server <- function(input, output, session) {
           columns = ShotType_Proportion,
           palette = paletteer_d("beyonce::X47"),
           # use 1-60 as range
-          domain = c(0.00, 0.65),
+          domain = c(0.00, 0.50),
           reverse = T,
           # anything above 100 has the highest color
           na_color = '#AD8875FF',
