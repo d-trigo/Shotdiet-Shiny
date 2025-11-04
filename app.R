@@ -41,14 +41,17 @@ ui <- fluidPage(
 
 server <- function(input, output, session) {
   
+  con <- dbConnect(duckdb())
 
+  nba_pbp <- reactive({
+    load_nba_pbp(seasons = as.numeric(input$year))
+  })|>
+    bindCache(input$year)
+    
   #note: with the PBP data, we don't have the athlete names as a separate column by default. this will require some regex work. hopefully i find a way to grab ESPN IDs in the future so we skip regex
   
   output$table <- 
     render_gt({
-      con <- dbConnect(duckdb())
-      
-      load_nba_pbp(seasons = as.numeric(input$year), dbConnection = con, tablename = "pbp")
       
       query <- 
         "SELECT 
