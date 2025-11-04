@@ -64,6 +64,7 @@ server <- function(input, output, session) {
               
             END AS player_name,
             
+            
           SUM(CASE WHEN type_text ILIKE ?shottype THEN 1 ELSE 0 END)/COUNT(DISTINCT game_id) AS ShotType_Attempts,
           
           sum(CASE WHEN type_text ILIKE ?shottype AND scoring_play = 'TRUE' THEN 1 ELSE 0 END)/COUNT(DISTINCT game_id) AS ShotType_Made,
@@ -71,6 +72,8 @@ server <- function(input, output, session) {
           COUNT(DISTINCT game_id) AS Games_Played,
           
           SUM(CASE WHEN shooting_play = 'TRUE' THEN 1 ELSE 0 END) AS Total_FGA,
+          
+          SUM(CASE WHEN type_text ILIKE ?shottype THEN 1 ELSE 0 END) AS ShotType_Totals,
           
           SUM(CASE WHEN type_text ILIKE ?shottype THEN 1 ELSE 0 END)/sum(CASE WHEN shooting_play = 'TRUE' THEN 1 ELSE 0 END) AS ShotType_Proportion,
           
@@ -80,7 +83,7 @@ server <- function(input, output, session) {
           
           FROM pbp
           GROUP BY player_name
-          ORDER BY ShotType_Attempts DESC
+          ORDER BY ShotType_Totals DESC
           LIMIT 100"
       
       query <- sqlInterpolate(conn = con, sql = query, shottype = input$shottype)
@@ -89,6 +92,7 @@ server <- function(input, output, session) {
         dplyr::filter(player_name!="NON-SHOOTING PLAY")|>
         dplyr::mutate(ShotType_Attempts = round(ShotType_Attempts, 2))|>
         dplyr::mutate(ShotType_Made = round(ShotType_Made, 2))|>
+        dplyr::mutate(ShotType_Totals = round(ShotType_Totals, 2))|>
         dplyr::mutate(ShotType_Proportion = round(ShotType_Proportion, 2))|>
         dplyr::mutate(ShotType_Efficiency = round(ShotType_Efficiency, 2))|>
         gt()|>
@@ -99,6 +103,7 @@ server <- function(input, output, session) {
           ShotType_Made = "Shot Type FGM (per game)",
           Games_Played = "Games Played",
           Total_FGA = "Total FGA (season)",
+          ShotType_Totals = "Shot Type FGA (totals)",
           ShotType_Proportion = "Shot Type Atmpt%",
           ShotType_Efficiency = "Shot Type FG%"
         )|>
