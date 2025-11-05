@@ -67,11 +67,16 @@ server <- function(input, output, session) {
               
             END AS player_name,
             
-          SUM(CASE WHEN type_text ILIKE ?shottype THEN 1 ELSE 0 END) AS ShotType_Attempts,
+            
+          SUM(CASE WHEN type_text ILIKE ?shottype THEN 1 ELSE 0 END)/COUNT(DISTINCT game_id) AS ShotType_Attempts,
           
-          sum(CASE WHEN type_text ILIKE ?shottype AND scoring_play = 'TRUE' THEN 1 ELSE 0 END) AS ShotType_Made,
+          sum(CASE WHEN type_text ILIKE ?shottype AND scoring_play = 'TRUE' THEN 1 ELSE 0 END)/COUNT(DISTINCT game_id) AS ShotType_Made,
+          
+          COUNT(DISTINCT game_id) AS Games_Played,
           
           SUM(CASE WHEN shooting_play = 'TRUE' THEN 1 ELSE 0 END) AS Total_FGA,
+          
+          SUM(CASE WHEN type_text ILIKE ?shottype THEN 1 ELSE 0 END) AS ShotType_Totals,
           
           SUM(CASE WHEN type_text ILIKE ?shottype THEN 1 ELSE 0 END)/sum(CASE WHEN shooting_play = 'TRUE' THEN 1 ELSE 0 END) AS ShotType_Proportion,
           
@@ -81,22 +86,27 @@ server <- function(input, output, session) {
           
           FROM pbp
           GROUP BY player_name
-          ORDER BY ShotType_Attempts DESC
+          ORDER BY ShotType_Totals DESC
           LIMIT 100"
       
       query <- sqlInterpolate(conn = con, sql = query, shottype = input$shottype)
       shottype_table <- dbGetQuery(con, query)
-      shottype_table|>
+      shottype_table|> #note to self: figure out error with Jimmy being changed to Jimmy Butler III. remove roman numerals? 
         dplyr::filter(player_name!="NON-SHOOTING PLAY")|>
+        dplyr::mutate(ShotType_Attempts = round(ShotType_Attempts, 2))|>
+        dplyr::mutate(ShotType_Made = round(ShotType_Made, 2))|>
+        dplyr::mutate(ShotType_Totals = round(ShotType_Totals, 2))|>
         dplyr::mutate(ShotType_Proportion = round(ShotType_Proportion, 2))|>
         dplyr::mutate(ShotType_Efficiency = round(ShotType_Efficiency, 2))|>
         gt()|>
         gt_theme_athletic()|>
         cols_label(
           player_name = "Player",
-          ShotType_Attempts = "Shot Type FGA",
-          ShotType_Made = "Shot Type FGM",
-          Total_FGA = "Total FGA",
+          ShotType_Attempts = "Shot Type FGA (per game)",
+          ShotType_Made = "Shot Type FGM (per game)",
+          Games_Played = "Games Played",
+          Total_FGA = "Total FGA (season)",
+          ShotType_Totals = "Shot Type FGA (totals)",
           ShotType_Proportion = "Shot Type Atmpt%",
           ShotType_Efficiency = "Shot Type FG%"
         )|>
@@ -104,7 +114,7 @@ server <- function(input, output, session) {
           columns = ShotType_Efficiency,
           palette = paletteer_d("rcartocolor::Temps"),
           # use 1-60 as range
-          domain = c(0.00, 0.65),
+          domain = c(0.00, 1.00),
           reverse = T,
           # anything above 100 has the highest color
           na_color = '#8FA3ABFF',
@@ -114,7 +124,7 @@ server <- function(input, output, session) {
           columns = ShotType_Proportion,
           palette = paletteer_d("beyonce::X47"),
           # use 1-60 as range
-          domain = c(0.00, 0.65),
+          domain = c(0.00, 0.50),
           reverse = T,
           # anything above 100 has the highest color
           na_color = '#AD8875FF',
