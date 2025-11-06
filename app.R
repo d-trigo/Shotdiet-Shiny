@@ -25,11 +25,11 @@ table_transformation <- function(df, shottype){
       .by = player_name,
       ShotType_Attempts = sum(str_detect(type_text, regex({{shottype}}, ignore_case = TRUE)) == TRUE)/length(unique(game_id)),
       ShotType_Made = sum(str_detect(type_text, regex({{shottype}}, ignore_case = TRUE)) == TRUE & scoring_play == TRUE)/length(unique(game_id)),
+      ShotType_Proportion = sum(str_detect(type_text, regex({{shottype}}, ignore_case = TRUE)) & shooting_play == TRUE)/sum(shooting_play==TRUE),
+      ShotType_Efficiency = sum(str_detect(type_text, regex({{shottype}}, ignore_case = TRUE)) & scoring_play ==TRUE)/sum(str_detect(type_text, regex({{shottype}}, ignore_case = TRUE))),
       Games_Played = length(unique(game_id)),
       ShotType_Totals = sum(str_detect(type_text, regex({{shottype}}, ignore_case = TRUE))),
-      Total_FGA = sum(shooting_play==TRUE),
-      ShotType_Proportion = sum(str_detect(type_text, regex({{shottype}}, ignore_case = TRUE)) & shooting_play == TRUE)/sum(shooting_play==TRUE),
-      ShotType_Efficiency = sum(str_detect(type_text, regex({{shottype}}, ignore_case = TRUE)) & scoring_play ==TRUE)/sum(str_detect(type_text, regex({{shottype}}, ignore_case = TRUE)))
+      Total_FGA = sum(shooting_play==TRUE)
       )
   return(df)
 }
@@ -47,7 +47,7 @@ ui <- fluidPage(
   ),
   sidebarPanel(
     selectInput("shottype", "Shot Type:",
-                c("Standing Jump Shot" = 'Jump Shot',
+                c("Standing Jump Shot" = '^Jump Shot$',
                   "Drives" = 'driving',
                   "Floaters" = 'float',
                   "Hooks" = 'hook',
@@ -97,6 +97,13 @@ server <- function(input, output, session) {
           ShotType_Totals = "Shot Type FGA (totals)",
           ShotType_Proportion = "Shot Type Atmpt%",
           ShotType_Efficiency = "Shot Type FG%"
+        )|>
+        data_color(
+          columns = ShotType_Attempts,
+          palette = paletteer_d("beyonce::X47"),
+          reverse = T,
+          na_color = '#8FA3ABFF',
+          alpha = .75
         )|>
         data_color(
           columns = ShotType_Efficiency,
