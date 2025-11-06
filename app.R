@@ -120,7 +120,7 @@ server <- function(input, output, session) {
           na_color = '#AD8875FF',
           alpha = .75
         )|>
-        opt_interactive()
+        opt_interactive(use_search = TRUE)
     })
 }
 
