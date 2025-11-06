@@ -1,13 +1,38 @@
 library(tidyverse)
 library(hoopR)
 library(shiny)
-library(duckdb)
-library(DBI)
 library(gt)
 library(gtExtras)
 library(gtUtils)
 library(paletteer)
 library(magick)
+
+fetchPBP <- function(season){
+  pbp_df <- load_nba_pbp(seasons = as.numeric(season))
+  pbp_df <- pbp_df|>
+    mutate(player_name = case_when(
+      str_detect(text, "blocks") & shooting_play == TRUE ~ str_extract(text, "blocks\\s+([^;]*)''s", group = 1),
+      !str_detect(text, "blocks") & shooting_play == TRUE ~ str_extract(text, "^(.+?)(?:makes|misses)", group = 1),
+      .default = NA
+    ))
+  return(pbp_df)
+}
+
+table_transformation <- function(df, shottype){
+  df <- df|>
+    filter(!is.na(player_name))|>
+    summarize(
+      .by = player_name,
+      ShotType_Attempts = sum(str_detect(type_text, regex({{shottype}}, ignore_case = TRUE)) == TRUE)/length(unique(game_id)),
+      ShotType_Made = sum(str_detect(type_text, regex({{shottype}}, ignore_case = TRUE)) == TRUE & scoring_play == TRUE)/length(unique(game_id)),
+      Games_Played = length(unique(game_id)),
+      ShotType_Totals = sum(str_detect(type_text, regex({{shottype}}, ignore_case = TRUE))),
+      Total_FGA = sum(shooting_play==TRUE),
+      ShotType_Proportion = sum(str_detect(type_text, regex({{shottype}}, ignore_case = TRUE)) & shooting_play == TRUE)/sum(shooting_play==TRUE),
+      ShotType_Efficiency = sum(str_detect(type_text, regex({{shottype}}, ignore_case = TRUE)) & scoring_play ==TRUE)/sum(str_detect(type_text, regex({{shottype}}, ignore_case = TRUE)))
+      )
+  return(df)
+}
 
 
 ui <- fluidPage(
@@ -23,15 +48,15 @@ ui <- fluidPage(
   sidebarPanel(
     selectInput("shottype", "Shot Type:",
                 c("Standing Jump Shot" = 'Jump Shot',
-                  "Drives" = '%driving%',
-                  "Floaters" = '%float%',
-                  "Hooks" = '%hook%',
-                  "Layups" = '%layup%',
-                  "Pullups" = '%pullup%',
-                  "Stepbacks" = '%step back%',
-                  "Fadeaways" = '%Fade Away%',
-                  "Dunks" = '%dunk%',
-                  "Cuts" = '%cutting%')),
+                  "Drives" = 'driving',
+                  "Floaters" = 'float',
+                  "Hooks" = 'hook',
+                  "Layups" = 'layup',
+                  "Pullups" = 'pullup',
+                  "Stepbacks" = 'step back',
+                  "Fadeaways" = 'Fade Away',
+                  "Dunks" = 'dunk',
+                  "Cuts" = 'cutting')),
     width = 3
   ),
   
@@ -41,55 +66,21 @@ ui <- fluidPage(
 
 server <- function(input, output, session) {
   
+  shottype_data <- reactive({
+    pbp_data <- fetchPBP(season = input$year)
+    return(pbp_data)
+  })|>
+    bindCache(input$year)
+  
 
   #note: with the PBP data, we don't have the athlete names as a separate column by default. this will require some regex work. hopefully i find a way to grab ESPN IDs in the future so we skip regex
-  
   output$table <- 
     render_gt({
-      con <- dbConnect(duckdb())
-      
-      load_nba_pbp(seasons = as.numeric(input$year), dbConnection = con, tablename = "pbp")
-      
-      query <- 
-        "SELECT 
-          
-            CASE WHEN text ILIKE '%blocks%' AND shooting_play = TRUE 
-              THEN regexp_extract(text, 'blocks\\s+([^;]*)''s', 1)
-              
-            WHEN text NOT ILIKE '%blocks%' AND shooting_play = TRUE
-             THEN regexp_extract(text, '^(.+?)(?:makes|misses)', 1)
-              
-            WHEN shooting_play = FALSE
-              THEN 'NON-SHOOTING PLAY'
-              
-            END AS player_name,
-            
-            
-          SUM(CASE WHEN type_text ILIKE ?shottype THEN 1 ELSE 0 END)/COUNT(DISTINCT game_id) AS ShotType_Attempts,
-          
-          sum(CASE WHEN type_text ILIKE ?shottype AND scoring_play = 'TRUE' THEN 1 ELSE 0 END)/COUNT(DISTINCT game_id) AS ShotType_Made,
-          
-          COUNT(DISTINCT game_id) AS Games_Played,
-          
-          SUM(CASE WHEN shooting_play = 'TRUE' THEN 1 ELSE 0 END) AS Total_FGA,
-          
-          SUM(CASE WHEN type_text ILIKE ?shottype THEN 1 ELSE 0 END) AS ShotType_Totals,
-          
-          SUM(CASE WHEN type_text ILIKE ?shottype THEN 1 ELSE 0 END)/sum(CASE WHEN shooting_play = 'TRUE' THEN 1 ELSE 0 END) AS ShotType_Proportion,
-          
-          SUM(CASE WHEN type_text ILIKE ?shottype AND scoring_play = 'TRUE' THEN 1 ELSE 0 END)/sum(CASE WHEN type_text ILIKE ?shottype THEN 1 ELSE 0 END) AS ShotType_Efficiency
-          
-          
-          
-          FROM pbp
-          GROUP BY player_name
-          ORDER BY ShotType_Totals DESC
-          LIMIT 100"
-      
-      query <- sqlInterpolate(conn = con, sql = query, shottype = input$shottype)
-      shottype_table <- dbGetQuery(con, query)
-      shottype_table|> #note to self: figure out error with Jimmy being changed to Jimmy Butler III. remove roman numerals? 
-        dplyr::filter(player_name!="NON-SHOOTING PLAY")|>
+      shot_table <- shottype_data()
+      shot_table <- table_transformation(shot_table, input$shottype)
+      shot_table|> #note to self: figure out error with Jimmy being changed to Jimmy Butler III. remove roman numerals? 
+        arrange(desc(ShotType_Totals))|>
+        slice(1:200)|>
         dplyr::mutate(ShotType_Attempts = round(ShotType_Attempts, 2))|>
         dplyr::mutate(ShotType_Made = round(ShotType_Made, 2))|>
         dplyr::mutate(ShotType_Totals = round(ShotType_Totals, 2))|>
@@ -110,20 +101,15 @@ server <- function(input, output, session) {
         data_color(
           columns = ShotType_Efficiency,
           palette = paletteer_d("rcartocolor::Temps"),
-          # use 1-60 as range
           domain = c(0.00, 1.00),
           reverse = T,
-          # anything above 100 has the highest color
           na_color = '#8FA3ABFF',
           alpha = .75
         )|>
         data_color(
           columns = ShotType_Proportion,
           palette = paletteer_d("beyonce::X47"),
-          # use 1-60 as range
-          domain = c(0.00, 0.50),
           reverse = T,
-          # anything above 100 has the highest color
           na_color = '#AD8875FF',
           alpha = .75
         )|>
