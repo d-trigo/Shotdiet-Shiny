@@ -23,13 +23,13 @@ table_transformation <- function(df, shottype){
     filter(!is.na(player_name))|>
     summarize(
       .by = player_name,
-      ShotType_Attempts = sum(str_detect(type_text, regex({{shottype}}, ignore_case = TRUE)) == TRUE)/length(unique(game_id)),
-      ShotType_Made = sum(str_detect(type_text, regex({{shottype}}, ignore_case = TRUE)) == TRUE & scoring_play == TRUE)/length(unique(game_id)),
-      ShotType_Proportion = sum(str_detect(type_text, regex({{shottype}}, ignore_case = TRUE)) & shooting_play == TRUE)/sum(shooting_play==TRUE),
-      ShotType_Efficiency = sum(str_detect(type_text, regex({{shottype}}, ignore_case = TRUE)) & scoring_play ==TRUE)/sum(str_detect(type_text, regex({{shottype}}, ignore_case = TRUE))),
-      Games_Played = length(unique(game_id)),
       ShotType_Totals = sum(str_detect(type_text, regex({{shottype}}, ignore_case = TRUE))),
-      Total_FGA = sum(shooting_play==TRUE)
+      Games_Played = length(unique(game_id)),
+      ShotType_Attempts = sum(str_detect(type_text, regex({{shottype}}, ignore_case = TRUE)) == TRUE)/length(unique(game_id)),
+      Total_FGA = sum(shooting_play==TRUE),
+      ShotType_Proportion = sum(str_detect(type_text, regex({{shottype}}, ignore_case = TRUE)) & shooting_play == TRUE)/sum(shooting_play==TRUE),
+      ShotType_Made = sum(str_detect(type_text, regex({{shottype}}, ignore_case = TRUE)) == TRUE & scoring_play == TRUE)/length(unique(game_id)),
+      ShotType_Efficiency = sum(str_detect(type_text, regex({{shottype}}, ignore_case = TRUE)) & scoring_play ==TRUE)/sum(str_detect(type_text, regex({{shottype}}, ignore_case = TRUE))),
       )
   return(df)
 }
@@ -42,7 +42,12 @@ ui <- fluidPage(
                   "2024-25" = 2025,
                   "2023-24" = 2024,
                   "2022-23" = 2023,
-                  "2021-22" = 2022)),
+                  "2021-22" = 2022,
+                  "2020-21" = 2021,
+                  "2019-20" = 2020,
+                  "2018-19" = 2019,
+                  "2017-18" = 2018,
+                  "2016-17" = 2017)),
     width = 3
   ),
   sidebarPanel(
@@ -60,8 +65,7 @@ ui <- fluidPage(
     width = 3
   ),
   
-  
-  gt_output(outputId = "table") #output table
+  mainPanel(gt_output(outputId = "table"), width = 5) #output table
 )
 
 server <- function(input, output, session) {
@@ -77,10 +81,13 @@ server <- function(input, output, session) {
   output$table <- 
     render_gt({
       shot_table <- shottype_data()
+      browser()
       shot_table <- table_transformation(shot_table, input$shottype)
       shot_table|> #note to self: figure out error with Jimmy being changed to Jimmy Butler III. remove roman numerals? 
         arrange(desc(ShotType_Totals))|>
         slice(1:200)|>
+        dplyr::mutate(Rank = row_number())|>
+        dplyr::relocate(Rank, .after = player_name)|>
         dplyr::mutate(ShotType_Attempts = round(ShotType_Attempts, 2))|>
         dplyr::mutate(ShotType_Made = round(ShotType_Made, 2))|>
         dplyr::mutate(ShotType_Totals = round(ShotType_Totals, 2))|>
@@ -90,6 +97,7 @@ server <- function(input, output, session) {
         gt_theme_athletic()|>
         cols_label(
           player_name = "Player",
+          Rank = "Rank (total shot type attempts)",
           ShotType_Attempts = "Shot Type FGA (per game)",
           ShotType_Made = "Shot Type FGM (per game)",
           Games_Played = "Games Played",
@@ -97,6 +105,17 @@ server <- function(input, output, session) {
           ShotType_Totals = "Shot Type FGA (totals)",
           ShotType_Proportion = "Shot Type Atmpt%",
           ShotType_Efficiency = "Shot Type FG%"
+        )|>
+        fmt_number(
+          columns = 'Rank',
+          pattern = '#{x}',
+          decimals = 0
+        )|>
+        data_color(
+          columns = Rank,
+          palette = paletteer_d("beyonce::X47"),
+          na_color = '#8FA3ABFF',
+          alpha = .75
         )|>
         data_color(
           columns = ShotType_Attempts,
@@ -119,6 +138,10 @@ server <- function(input, output, session) {
           reverse = T,
           na_color = '#AD8875FF',
           alpha = .75
+        )|>
+        cols_width(
+          player_name ~ px(125),
+          Rank:ShotType_Efficiency ~ px(100)
         )|>
         opt_interactive(use_search = TRUE)
     })
