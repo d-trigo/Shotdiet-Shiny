@@ -9,8 +9,11 @@ library(magick)
 library(duckplyr)
 #duckplyr::methods_restore() to debug with default dplyr
 
+db_exec("INSTALL httpfs")
+db_exec("LOAD httpfs")
+
 fetchPBP <- function(season){
-  pbp_df <- load_nba_pbp(seasons = as.numeric(season))
+  pbp_df <- read_parquet_duckdb(paste0("https://github.com/d-trigo/Shotdiet-Shiny/raw/refs/heads/duckplyr_test/data/", season, "_pbp.parquet"))
   pbp_df <- pbp_df|>
     mutate(player_name = case_when(
       str_detect(text, "blocks") & shooting_play == TRUE ~ str_extract(text, "blocks\\s+([^;]*)''s", group = 1),
@@ -65,6 +68,7 @@ ui <- fluidPage(
   
   gt_output(outputId = "table") #output table
 )
+
 
 server <- function(input, output, session) {
   
