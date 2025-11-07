@@ -6,6 +6,8 @@ library(gtExtras)
 library(gtUtils)
 library(paletteer)
 library(magick)
+library(duckplyr)
+#duckplyr::methods_restore() to debug with default dplyr
 
 fetchPBP <- function(season){
   pbp_df <- load_nba_pbp(seasons = as.numeric(season))
@@ -77,6 +79,7 @@ server <- function(input, output, session) {
   output$table <- 
     render_gt({
       shot_table <- shottype_data()
+      browser()
       shot_table <- table_transformation(shot_table, input$shottype)
       shot_table|> #note to self: figure out error with Jimmy being changed to Jimmy Butler III. remove roman numerals? 
         arrange(desc(ShotType_Totals))|>
